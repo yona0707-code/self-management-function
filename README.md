@@ -19,6 +19,7 @@ The project includes two interfaces:
 - Receive an adaptive work mode such as **Lock In**, **Steady**, **Minimum**, **Recovery**, or **Catch-Up**
 - Build a study-style profile and receive execution advice
 - Track estimated progress and review check-in history
+- Keep the public app read-only while owner actions are protected by a password
 - Store all information locally in JSON and CSV files
 
 The study-style profile is an app-specific planning aid inspired by educational psychology and cognitive science. It is not a diagnosis.
@@ -49,6 +50,18 @@ On Windows, activate the environment with:
 ```bash
 streamlit run smf_visual_app.py
 ```
+
+Before running the visual app, configure the owner password. For local use, create
+`.streamlit/secrets.toml` (do not commit it):
+
+```toml
+SMF_ADMIN_PASSWORD = "choose-a-strong-password"
+```
+
+On Streamlit Community Cloud, add the same key in the app's **Secrets** settings.
+Without this setting, the app stays safely in read-only mode. Visitors can browse
+goals, progress, history, and explanations; only an unlocked owner session can
+create or delete goals, edit the study profile, or submit a Daily Check-In.
 
 Streamlit will print a local URL, usually `http://localhost:8501`. On first launch, complete the study-style test, add a goal, and use **Daily Check-In** to generate a plan.
 

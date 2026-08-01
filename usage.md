@@ -18,6 +18,12 @@ Study Style Test → Add a goal → Daily Check-In → Follow today's task
                          Check Progress / History
 ```
 
+The hosted app opens in **read-only visitor mode**. Visitors can review the owner's
+goals, progress, history, study profile, and SMF explanation, but cannot save or
+delete anything. The owner can unlock editing from **Owner access** in the sidebar
+using the password configured in Streamlit Secrets. Lock editing again when finished,
+especially on a shared device.
+
 ## 1. Create your Study Style Profile
 
 On your first visit, the app opens the **Study Style Test** automatically.
@@ -92,12 +98,12 @@ Open **Delete Goal Tab**, choose the goal, and select **Delete Goal Tab**.
 
 Deletion cannot be undone. It removes the goal and its latest saved task state. If you want to restart a completed goal, delete it and create a new goal tab.
 
-## Public demo data and privacy
+## Public viewing and privacy
 
-The hosted app is a public prototype without user accounts. The current implementation saves goals, profile data, state, and history in files used by the deployed app rather than in a private per-user account.
+The hosted app is a personal progress page without public accounts. Only the owner can write after entering the owner password; everyone else has read-only access. The implementation still saves the owner's goals, profile data, state, and history in files used by the deployed app.
 
-- Do not enter names, contact details, school records, health information, passwords, or other sensitive data.
-- Data may be visible to or changed by other visitors.
+- Do not put names, contact details, school records, health information, passwords, or other sensitive data in goal or check-in fields.
+- Data entered by the owner may be visible to visitors, so it should still be treated as public.
 - Data may be reset when the hosted app restarts or is redeployed.
 - Do not rely on the hosted version as permanent storage or as your only copy of important information.
 

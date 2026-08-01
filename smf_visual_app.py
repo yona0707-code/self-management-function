@@ -33,6 +33,8 @@ import json
 import csv
 import math
 import uuid
+import hmac
+import os
 import pandas as pd
 
 
@@ -40,6 +42,63 @@ GOALS_FILE = Path("smf_goals.json")
 STATE_FILE = Path("smf_state.json")
 HISTORY_FILE = Path("smf_history.csv")
 STUDY_PROFILE_FILE = Path("study_profile.json")
+
+
+def get_admin_password():
+    """Load the owner password without storing it in the repository."""
+    try:
+        password = st.secrets.get("SMF_ADMIN_PASSWORD", "")
+    except (FileNotFoundError, KeyError):
+        password = ""
+
+    return str(password or os.environ.get("SMF_ADMIN_PASSWORD", ""))
+
+
+def is_owner():
+    return bool(st.session_state.get("owner_authenticated", False))
+
+
+def render_owner_login():
+    """Render the sidebar login and return whether this session may write."""
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Owner access")
+
+    if is_owner():
+        st.sidebar.success("Editing unlocked")
+        if st.sidebar.button("Lock editing", use_container_width=True):
+            st.session_state["owner_authenticated"] = False
+            st.session_state["screen"] = "home"
+            st.rerun()
+        return True
+
+    configured_password = get_admin_password()
+
+    if not configured_password:
+        st.sidebar.caption("Read-only mode (owner password is not configured).")
+        return False
+
+    with st.sidebar.form("owner_login_form"):
+        entered_password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Unlock editing", use_container_width=True)
+
+    if submitted:
+        if hmac.compare_digest(entered_password, configured_password):
+            st.session_state["owner_authenticated"] = True
+            st.rerun()
+        else:
+            st.sidebar.error("Incorrect password.")
+
+    st.sidebar.caption("Visitors can browse the app in read-only mode.")
+    return False
+
+
+def require_owner():
+    """Stop a write screen from rendering unless the owner has unlocked it."""
+    if is_owner():
+        return True
+
+    st.warning("This page is read-only for visitors. Unlock owner access in the sidebar to make changes.")
+    return False
 
 
 MODE_LABELS = {
@@ -900,6 +959,9 @@ def get_consistency_data(goal_name, limit=14):
 def render_study_style_test():
     st.title("Study Style Test")
 
+    if not require_owner():
+        return
+
     st.write(
         "This short test helps the app understand how you tend to study. "
         "It is not a diagnosis. It is used only to personalize study methods."
@@ -1035,9 +1097,10 @@ def render_profile():
 
     st.markdown("---")
 
-    if st.button("Retake Study Style Test"):
-        st.session_state["screen"] = "study_test"
-        st.rerun()
+    if is_owner():
+        if st.button("Retake Study Style Test"):
+            st.session_state["screen"] = "study_test"
+            st.rerun()
 
 
 def render_home():
@@ -1051,17 +1114,20 @@ def render_home():
 
     st.write("")
 
-    col1, col2 = st.columns(2)
+    if is_owner():
+        col1, col2 = st.columns(2)
 
-    with col1:
-        if st.button("Daily Check-In", use_container_width=True):
-            st.session_state["screen"] = "daily_check_in"
-            st.rerun()
+        with col1:
+            if st.button("Daily Check-In", use_container_width=True):
+                st.session_state["screen"] = "daily_check_in"
+                st.rerun()
 
-    with col2:
-        if st.button("Add New Goal", use_container_width=True):
-            st.session_state["screen"] = "add_goal"
-            st.rerun()
+        with col2:
+            if st.button("Add New Goal", use_container_width=True):
+                st.session_state["screen"] = "add_goal"
+                st.rerun()
+    else:
+        st.info("Visitor mode: you can view goals and progress. Only the owner can record a Daily Check-In or change data.")
 
     goals = load_goals()
 
@@ -1084,6 +1150,9 @@ def render_home():
 
 def render_add_goal():
     st.title("Add New Academic Goal Tab")
+
+    if not require_owner():
+        return
 
     st.write("Examples: SAT 1570, A Level 4A*, MIT project, application essay, GitHub portfolio.")
 
@@ -1166,6 +1235,9 @@ def render_add_goal():
 
 def render_daily_check_in():
     st.title("Daily Check-In")
+
+    if not require_owner():
+        return
 
     goals = load_goals()
 
@@ -1549,6 +1621,9 @@ def render_check_progress():
 def render_delete_goal():
     st.title("Delete Goal Tab")
 
+    if not require_owner():
+        return
+
     goals = load_goals()
 
     if not goals:
@@ -1829,64 +1904,64 @@ def main():
 
     profile = load_study_profile()
 
+    if "owner_authenticated" not in st.session_state:
+        st.session_state["owner_authenticated"] = False
+
     if "screen" not in st.session_state:
         # Show the study-style test on the first visit, but do not keep forcing
         # it on every rerun. Otherwise every sidebar click is immediately
         # redirected back to the test until a profile has been created.
-        st.session_state["screen"] = (
-            "study_test" if profile is None else "home"
-        )
-
-    if profile is None and st.session_state["screen"] not in {
-        "study_test",
-        "function_explanation",
-    }:
-        st.session_state["screen"] = "study_test"
+        st.session_state["screen"] = "home"
 
     st.sidebar.title("☰ Menu")
 
-    if profile is None:
-        if st.sidebar.button("Study Style Test", use_container_width=True):
+    owner_unlocked = render_owner_login()
+
+    if st.sidebar.button("Home", use_container_width=True):
+        st.session_state["screen"] = "home"
+        st.rerun()
+
+    if st.sidebar.button("What is SMF(x)?", use_container_width=True):
+        st.session_state["screen"] = "function_explanation"
+        st.rerun()
+
+    if profile is not None and st.sidebar.button("Study Style Profile", use_container_width=True):
+        st.session_state["screen"] = "profile"
+        st.rerun()
+
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Goals and progress")
+
+    if st.sidebar.button("View Goal Tabs", use_container_width=True):
+        st.session_state["screen"] = "view_goals"
+        st.rerun()
+
+    if st.sidebar.button("Check Progress", use_container_width=True):
+        st.session_state["screen"] = "check_progress"
+        st.rerun()
+
+    if st.sidebar.button("History", use_container_width=True):
+        st.session_state["screen"] = "history"
+        st.rerun()
+
+    if owner_unlocked:
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("Owner actions")
+
+        if st.sidebar.button("Daily Check-In", use_container_width=True):
+            st.session_state["screen"] = "daily_check_in"
+            st.rerun()
+
+        if st.sidebar.button("Add New Goal", use_container_width=True):
+            st.session_state["screen"] = "add_goal"
+            st.rerun()
+
+        if profile is None and st.sidebar.button("Create Study Style Profile", use_container_width=True):
             st.session_state["screen"] = "study_test"
-            st.rerun()
-
-        if st.sidebar.button("What is SMF(x)?", use_container_width=True):
-            st.session_state["screen"] = "function_explanation"
-            st.rerun()
-
-        st.sidebar.info("Complete the Study Style Test to unlock the other tabs.")
-    else:
-        if st.sidebar.button("Home", use_container_width=True):
-            st.session_state["screen"] = "home"
-            st.rerun()
-
-        st.sidebar.markdown("---")
-
-        if st.sidebar.button("What is SMF(x)?", use_container_width=True):
-            st.session_state["screen"] = "function_explanation"
-            st.rerun()
-
-        if st.sidebar.button("Study Style Profile", use_container_width=True):
-            st.session_state["screen"] = "profile"
-            st.rerun()
-
-        st.sidebar.markdown("---")
-        st.sidebar.subheader("Goal Management")
-
-        if st.sidebar.button("View Goal Tabs", use_container_width=True):
-            st.session_state["screen"] = "view_goals"
-            st.rerun()
-
-        if st.sidebar.button("Check Progress", use_container_width=True):
-            st.session_state["screen"] = "check_progress"
             st.rerun()
 
         if st.sidebar.button("Delete Goal Tab", use_container_width=True):
             st.session_state["screen"] = "delete_goal"
-            st.rerun()
-
-        if st.sidebar.button("History", use_container_width=True):
-            st.session_state["screen"] = "history"
             st.rerun()
 
     screen = st.session_state["screen"]
