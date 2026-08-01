@@ -2,7 +2,9 @@
 
 SMF is a local study-planning app that turns a daily check-in into a realistic task plan. It considers goal importance, deadline pressure, current progress, available time, energy, concentration, stress, and study style to recommend how much work to do today.
 
-For the product scope, decision model, formulas, research basis, and development priorities, see the [project planning document](planning.md).
+**[Try the hosted Streamlit app](https://self-management-function-8w87ie9dkcxwlbms5abk7m.streamlit.app/)**
+
+See the [usage guide](usage.md) for step-by-step instructions and public-demo privacy notes. For the product scope, decision model, formulas, research basis, and development priorities, see the [project planning document](planning.md).
 
 The project includes two interfaces:
 
@@ -79,6 +81,7 @@ These files may contain personal check-in information. Keep them private and bac
 .
 ├── README.md
 ├── planning.md         # Product plan and SMF decision model
+├── usage.md            # Hosted app usage guide
 ├── smf_app.py          # Command-line application
 └── smf_visual_app.py   # Streamlit application
 ```
