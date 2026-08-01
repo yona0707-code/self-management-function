@@ -1823,51 +1823,71 @@ def main():
     st.set_page_config(
         page_title="Self-Management Function",
         page_icon="🎯",
-        layout="centered"
+        layout="centered",
+        initial_sidebar_state="expanded"
     )
-
-    if "screen" not in st.session_state:
-        st.session_state["screen"] = "home"
 
     profile = load_study_profile()
 
-    if profile is None and st.session_state["screen"] != "study_test":
+    if "screen" not in st.session_state:
+        # Show the study-style test on the first visit, but do not keep forcing
+        # it on every rerun. Otherwise every sidebar click is immediately
+        # redirected back to the test until a profile has been created.
+        st.session_state["screen"] = (
+            "study_test" if profile is None else "home"
+        )
+
+    if profile is None and st.session_state["screen"] not in {
+        "study_test",
+        "function_explanation",
+    }:
         st.session_state["screen"] = "study_test"
 
     st.sidebar.title("☰ Menu")
 
-    if st.sidebar.button("Home", use_container_width=True):
-        st.session_state["screen"] = "home"
-        st.rerun()
+    if profile is None:
+        if st.sidebar.button("Study Style Test", use_container_width=True):
+            st.session_state["screen"] = "study_test"
+            st.rerun()
 
-    st.sidebar.markdown("---")
+        if st.sidebar.button("What is SMF(x)?", use_container_width=True):
+            st.session_state["screen"] = "function_explanation"
+            st.rerun()
 
-    if st.sidebar.button("What is SMF(x)?", use_container_width=True):
-        st.session_state["screen"] = "function_explanation"
-        st.rerun()
+        st.sidebar.info("Complete the Study Style Test to unlock the other tabs.")
+    else:
+        if st.sidebar.button("Home", use_container_width=True):
+            st.session_state["screen"] = "home"
+            st.rerun()
 
-    if st.sidebar.button("Study Style Profile", use_container_width=True):
-        st.session_state["screen"] = "profile"
-        st.rerun()
+        st.sidebar.markdown("---")
 
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Goal Management")
+        if st.sidebar.button("What is SMF(x)?", use_container_width=True):
+            st.session_state["screen"] = "function_explanation"
+            st.rerun()
 
-    if st.sidebar.button("View Goal Tabs", use_container_width=True):
-        st.session_state["screen"] = "view_goals"
-        st.rerun()
+        if st.sidebar.button("Study Style Profile", use_container_width=True):
+            st.session_state["screen"] = "profile"
+            st.rerun()
 
-    if st.sidebar.button("Check Progress", use_container_width=True):
-        st.session_state["screen"] = "check_progress"
-        st.rerun()
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("Goal Management")
 
-    if st.sidebar.button("Delete Goal Tab", use_container_width=True):
-        st.session_state["screen"] = "delete_goal"
-        st.rerun()
+        if st.sidebar.button("View Goal Tabs", use_container_width=True):
+            st.session_state["screen"] = "view_goals"
+            st.rerun()
 
-    if st.sidebar.button("History", use_container_width=True):
-        st.session_state["screen"] = "history"
-        st.rerun()
+        if st.sidebar.button("Check Progress", use_container_width=True):
+            st.session_state["screen"] = "check_progress"
+            st.rerun()
+
+        if st.sidebar.button("Delete Goal Tab", use_container_width=True):
+            st.session_state["screen"] = "delete_goal"
+            st.rerun()
+
+        if st.sidebar.button("History", use_container_width=True):
+            st.session_state["screen"] = "history"
+            st.rerun()
 
     screen = st.session_state["screen"]
 
