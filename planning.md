@@ -145,7 +145,7 @@ Progress is estimated from daily check-in evidence instead of manual progress in
 
 This is a practical consistency signal, not a claim of perfect subject mastery.
 
-The main progress visualization uses effort in minutes:
+The effort summary uses minutes:
 
 ```text
 planned_effort_minutes = normal_goal_minutes × final_multiplier
@@ -154,9 +154,8 @@ total_integrated_effort = sum of daily_effort_minutes over the selected period
 ```
 
 Completed, partly completed, and skipped tasks have completion weights of `1.0`,
-`0.4`, and `0.0`. The main graph shows chronological daily effort bars, not
-cumulative effort or completion percentage. Total integrated effort, average
-daily effort, and the highest effort day are shown as summary metrics.
+`0.4`, and `0.0`. No effort graph is shown. The section displays only total
+integrated effort, average daily effort, and the highest effort day.
 
 Daily effort estimates how much work was completed each day. The integrated
 effort is the area under the daily effort curve. Since the app records daily

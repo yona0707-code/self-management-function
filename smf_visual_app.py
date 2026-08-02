@@ -35,7 +35,6 @@ import math
 import uuid
 import hmac
 import os
-import altair as alt
 import pandas as pd
 
 
@@ -1662,6 +1661,11 @@ def render_check_progress():
                 "daily effort values."
             )
 
+            st.caption(
+                "daily effort = planned effort × completion weight  ·  "
+                "integrated effort = Σ daily effort"
+            )
+
             if effort_data:
                 df = pd.DataFrame(effort_data)
                 df = df.sort_values("Date").reset_index(drop=True)
@@ -1686,43 +1690,6 @@ def render_check_progress():
                     highest_effort_row["Date"].strftime("%b %d, %Y"),
                     delta=f"{highest_effort_row['Daily effort minutes']:.1f} min",
                     delta_color="off",
-                )
-
-                date_axis = alt.Axis(
-                    title="Date",
-                    format="%b %d",
-                    labelAngle=-45,
-                    tickCount=8,
-                )
-                x_encoding = alt.X(
-                    "Date:T",
-                    axis=date_axis,
-                    sort="ascending",
-                )
-
-                daily_effort_chart = alt.Chart(df).mark_bar(
-                    color="#8FB9E1",
-                    opacity=0.7,
-                ).encode(
-                    x=x_encoding,
-                    y=alt.Y(
-                        "Daily effort minutes:Q",
-                        title="Daily effort minutes",
-                    ),
-                    tooltip=[
-                        alt.Tooltip("Date:T", title="Date", format="%b %d, %Y"),
-                        alt.Tooltip(
-                            "Daily effort minutes:Q",
-                            title="Daily effort minutes",
-                            format=".1f",
-                        ),
-                    ],
-                )
-
-                st.altair_chart(
-                    daily_effort_chart.properties(height=360)
-                    .interactive(),
-                    use_container_width=True,
                 )
             else:
                 st.caption("No effort data has been recorded yet for this goal.")
@@ -1991,9 +1958,8 @@ def render_function_explanation():
     st.subheader("9. Daily Effort")
 
     st.write(
-        "The Check Progress page shows chronological daily effort bars for each goal. "
-        "Integrated effort is presented as a summary metric, together with average "
-        "daily effort and the highest effort day."
+        "The Check Progress page presents total integrated effort, average daily "
+        "effort, and the highest effort day for each goal."
     )
 
     st.markdown(
@@ -2009,6 +1975,11 @@ def render_function_explanation():
         "The integrated effort is the area under the daily effort curve. "
         "Since the app records daily data, this is approximated by summing "
         "daily effort values."
+    )
+
+    st.caption(
+        "daily effort = planned effort × completion weight  ·  "
+        "integrated effort = Σ daily effort"
     )
 
     st.write(
