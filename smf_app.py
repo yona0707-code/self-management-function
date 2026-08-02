@@ -1,4 +1,4 @@
-# Self-Management Function App
+# Yona's Management Function
 # Version 6: Multiple Academic Goal Tabs
 #
 # This app is for academic/application-related goals.
@@ -9,7 +9,7 @@
 #   - Essay goal
 #
 # Daily check-in is done once.
-# Then the Self-Management Function chooses which goal tabs need attention today.
+# Then Yona's Management Function chooses which goal tabs need attention today.
 
 
 from datetime import datetime, date
@@ -262,7 +262,7 @@ def update_goal_progress(goals):
 
 
 # ----------------------------
-# Self-Management Function
+# Yona's Management Function
 # ----------------------------
 
 def calculate_goal_pressure(goal):
@@ -627,7 +627,7 @@ def daily_check_in(goals):
     relaxation_advice = get_relaxation_advice(mode, has_fun_plan, fun_plan)
 
     print("\n===================================")
-    print(" Today's Self-Management Plan")
+    print(" Today's YMF Plan")
     print("===================================")
 
     print("\nToday's mode:")
@@ -706,7 +706,7 @@ def main():
         goals = load_goals()
 
         print("\n===================================")
-        print(" Self-Management Function App")
+        print(" Yona's Management Function")
         print(" Version 6: Academic Goal Tabs")
         print("===================================")
 

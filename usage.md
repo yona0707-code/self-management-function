@@ -1,10 +1,10 @@
-# How to Use the Self-Management Function App
+# How to Use Yona's Management Function
 
 ## Open the app
 
 Use the hosted Streamlit version in your browser:
 
-**[Open the Self-Management Function App](https://self-management-function-8w87ie9dkcxwlbms5abk7m.streamlit.app/)**
+**[Open Yona's Management Function](https://self-management-function-8w87ie9dkcxwlbms5abk7m.streamlit.app/)**
 
 If Streamlit shows a sleeping-app screen, wait for the app to wake up and reload the page if necessary.
 
@@ -19,7 +19,7 @@ Study Style Test → Add a goal → Daily Check-In → Follow today's task
 ```
 
 The hosted app opens in **read-only visitor mode**. Visitors can review the owner's
-goals, progress, history, study profile, and SMF explanation, but cannot save or
+goals, progress, history, study profile, and YMF explanation, but cannot save or
 delete anything. The owner can unlock editing from **Owner access** in the sidebar
 using the password configured in Streamlit Secrets. Lock editing again when finished,
 especially on a shared device.
@@ -90,7 +90,7 @@ Use the sidebar menu to open:
 - **Check Progress** — see estimated progress, the consistency graph, and recent completion evidence for each goal.
 - **History** — review the 15 most recent check-ins, recommended modes, tasks, and function values.
 - **Study Style Profile** — review recommendations or retake the test.
-- **What is SMF(x)?** — read how the planning function works.
+- **What is YMF(x)?** — read how the planning function works.
 
 ## 6. Delete or restart a goal
 

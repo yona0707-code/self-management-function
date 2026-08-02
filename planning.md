@@ -1,13 +1,13 @@
-# Self-Management Function App — Planning
+# Yona's Management Function — Planning
 
 ## 1. Project overview
 
-The **Self-Management Function App (SMF)** is a Streamlit app that helps students make realistic daily decisions for academic goals.
+**Yona's Management Function (YMF)** is a personal Streamlit app that helps Yona make realistic daily decisions for academic goals.
 
 Instead of assigning a fixed schedule or simply encouraging the user to work harder, the app evaluates the selected goal, the user's condition, recent completion history, and study-style profile. It then recommends a mode and a concrete task for today.
 
 ```text
-SMF(x) → today's mode + today's task
+YMF(x) → today's mode + today's task
 
 x = goal state + daily condition + completion history + study style profile
 ```
@@ -175,7 +175,7 @@ The MVP includes:
 - Check Progress
 - Delete Goal Tab
 - History
-- What is SMF(x)?
+- What is YMF(x)?
 - Study Style Profile
 - About the Study Style Test
 
@@ -221,7 +221,7 @@ The Study Style Test is inspired by cognitive science and educational psychology
 
 1. **Broad self-management idea** — the initial scope included many areas of life.
 2. **Academic focus** — the scope was narrowed to make the model coherent and measurable.
-3. **Mathematical function** — SMF(x) was defined to return a daily mode and task.
+3. **Mathematical function** — YMF(x) was defined to return a daily mode and task.
 4. **Daily modes** — Lock In, Steady, Minimum, Recovery, and Catch-Up were introduced.
 5. **Goal tabs** — each academic goal received an independent state.
 6. **Single-goal check-in** — daily calculation was limited to one selected goal.

@@ -1,12 +1,12 @@
-# Self-Management Function App
-# Version 18: Study Style Adjusted SMF + About Study Style Test inside Profile
+# Yona's Management Function
+# Version 18: Study Style Adjusted YMF + About Study Style Test inside Profile
 #
 # Main screen:
 #   1. Daily Check-In
 #   2. Add New Goal
 #
 # Sidebar:
-#   - What is SMF(x)?
+#   - What is YMF(x)?
 #   - Study Style Profile
 #   - View Goal Tabs
 #   - Check Progress
@@ -15,7 +15,7 @@
 #
 # Core idea:
 #   The user checks in for ONE academic goal at a time.
-#   SMF decides today's mode and task amount.
+#   YMF decides today's mode and task amount.
 #   Study Style Profile affects the function itself:
 #       1. It adjusts capacity.
 #       2. It adjusts the final task amount.
@@ -47,11 +47,17 @@ STUDY_PROFILE_FILE = Path("study_profile.json")
 def get_admin_password():
     """Load the owner password without storing it in the repository."""
     try:
-        password = st.secrets.get("SMF_ADMIN_PASSWORD", "")
+        password = st.secrets.get(
+            "YMF_ADMIN_PASSWORD", st.secrets.get("SMF_ADMIN_PASSWORD", "")
+        )
     except (FileNotFoundError, KeyError):
         password = ""
 
-    return str(password or os.environ.get("SMF_ADMIN_PASSWORD", ""))
+    return str(
+        password
+        or os.environ.get("YMF_ADMIN_PASSWORD", "")
+        or os.environ.get("SMF_ADMIN_PASSWORD", "")
+    )
 
 
 def is_owner():
@@ -618,7 +624,7 @@ def apply_estimated_progress_for_goal(goals, state, selected_goal_id, completion
 
 
 # ----------------------------
-# Self-Management Function
+# Yona's Management Function
 # ----------------------------
 
 def calculate_goal_pressure(goal):
@@ -1104,7 +1110,7 @@ def render_profile():
 
 
 def render_home():
-    st.title("Self-Management Function")
+    st.title("Yona's Management Function")
 
     st.write(
         "This app helps you check in with one academic goal at a time, "
@@ -1681,10 +1687,10 @@ def render_history():
 
 
 def render_function_explanation():
-    st.title("What is SMF(x)?")
+    st.title("What is YMF(x)?")
 
     st.write(
-        "SMF(x) means **Self-Management Function**. "
+        "YMF(x) means **Yona's Management Function**. "
         "It is the mathematical function used by this app to decide what the user should do today."
     )
 
@@ -1700,11 +1706,11 @@ def render_function_explanation():
 
         Then it outputs:
 
-        **SMF(x) → today's mode + today's task**
+        **YMF(x) → today's mode + today's task**
         """
     )
 
-    st.info("Example: **SMF(x) = 🟡 MINIMUM + memorise 10 words**")
+    st.info("Example: **YMF(x) = 🟡 MINIMUM + memorise 10 words**")
 
     st.markdown("---")
 
@@ -1880,7 +1886,7 @@ def render_function_explanation():
 
     st.markdown(
         """
-        **SMF(x)** is designed to avoid two common problems:
+        **YMF(x)** is designed to avoid two common problems:
 
         1. Forcing the user to work too hard and burn out.  
         2. Letting the user relax so much that they forget the big goal.
@@ -1896,7 +1902,7 @@ def render_function_explanation():
 
 def main():
     st.set_page_config(
-        page_title="Self-Management Function",
+        page_title="Yona's Management Function",
         page_icon="🎯",
         layout="centered",
         initial_sidebar_state="expanded"
@@ -1921,7 +1927,7 @@ def main():
         st.session_state["screen"] = "home"
         st.rerun()
 
-    if st.sidebar.button("What is SMF(x)?", use_container_width=True):
+    if st.sidebar.button("What is YMF(x)?", use_container_width=True):
         st.session_state["screen"] = "function_explanation"
         st.rerun()
 

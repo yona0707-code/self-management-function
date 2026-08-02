@@ -1,6 +1,6 @@
-# Self-Management Function (SMF)
+# Yona's Management Function (YMF)
 
-SMF is a local study-planning app that turns a daily check-in into a realistic task plan. It considers goal importance, deadline pressure, current progress, available time, energy, concentration, stress, and study style to recommend how much work to do today.
+Yona's Management Function is a personal study-planning app that turns a daily check-in into a realistic task plan. It considers goal importance, deadline pressure, current progress, available time, energy, concentration, stress, and study style to recommend how much work to do today.
 
 **[Try the hosted Streamlit app](https://self-management-function-8w87ie9dkcxwlbms5abk7m.streamlit.app/)**
 
@@ -55,13 +55,14 @@ Before running the visual app, configure the owner password. For local use, crea
 `.streamlit/secrets.toml` (do not commit it):
 
 ```toml
-SMF_ADMIN_PASSWORD = "choose-a-strong-password"
+YMF_ADMIN_PASSWORD = "choose-a-strong-password"
 ```
 
 On Streamlit Community Cloud, add the same key in the app's **Secrets** settings.
 Without this setting, the app stays safely in read-only mode. Visitors can browse
 goals, progress, history, and explanations; only an unlocked owner session can
 create or delete goals, edit the study profile, or submit a Daily Check-In.
+The former `SMF_ADMIN_PASSWORD` key is still accepted for compatibility.
 
 Streamlit will print a local URL, usually `http://localhost:8501`. On first launch, complete the study-style test, add a goal, and use **Daily Check-In** to generate a plan.
 
@@ -93,7 +94,7 @@ These files may contain personal check-in information. Keep them private and bac
 ```text
 .
 ├── README.md
-├── planning.md         # Product plan and SMF decision model
+├── planning.md         # Product plan and YMF decision model
 ├── usage.md            # Hosted app usage guide
 ├── smf_app.py          # Command-line application
 └── smf_visual_app.py   # Streamlit application
@@ -101,7 +102,7 @@ These files may contain personal check-in information. Keep them private and bac
 
 ## How planning works
 
-At a high level, SMF combines:
+At a high level, YMF combines:
 
 1. **Goal pressure** — importance, remaining progress, and time until the deadline
 2. **Capacity** — available time, energy, concentration, stress, and readiness
