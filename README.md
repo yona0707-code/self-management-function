@@ -110,3 +110,22 @@ At a high level, YMF combines:
 4. **Study style** — adjustments to workload and advice for completing the task
 
 The result is a suggested mode and task amount for the selected goal. Treat the recommendation as a planning prompt and adjust it when your circumstances require it.
+
+## Consistency graph development history
+
+The progress visualization went through several versions before the graph was removed:
+
+1. **Original consistency graph** — `Check Progress` displayed a line chart for each goal using completion evidence from recent check-ins: **Completed = 100%**, **Partly completed = 40%**, and **Skipped = 0%**. This made consistency visible, but it represented completion status rather than the amount of work done.
+2. **Changed to effort-based visualization** (`026c0da`, *fixing graph 2*, August 2, 2026) — the consistency line became a secondary score. The main visualization was replaced with daily-effort bars and a cumulative integrated-effort line covering up to 90 days. Daily effort was estimated as `normal goal minutes × final task multiplier × completion weight`.
+3. **Simplified the graph** (`2ee2090`, *fixing graph 3*, August 2, 2026) — the cumulative line was removed because integrated effort could be communicated more clearly as a total. The page kept chronological daily-effort bars and added three summary metrics: total integrated effort, average daily effort, and highest effort day.
+4. **Removed the graph** (`8a11511`, *removing graph*, August 2, 2026) — the daily-effort bar chart and its Altair dependency were removed. `Check Progress` now presents only the three effort summary metrics, the secondary consistency score, and recent daily check-in evidence.
+
+The underlying measurements were retained after the visualization was removed:
+
+```text
+planned effort = normal goal minutes × final task multiplier
+daily effort = planned effort × completion weight
+integrated effort = Σ daily effort
+```
+
+Completion weights remain `1.0` for completed, `0.4` for partly completed, and `0.0` for skipped. The final design favors compact numerical summaries while preserving consistency as supporting information rather than treating it as a direct measure of academic mastery.
