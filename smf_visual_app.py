@@ -35,6 +35,7 @@ import math
 import uuid
 import hmac
 import os
+import altair as alt
 import pandas as pd
 
 
@@ -950,16 +951,15 @@ def get_consistency_data(goal_name, days=90):
             )
             if check_in_date.date() < cutoff:
                 continue
-            date_label = check_in_date.strftime("%b %d")
         except ValueError:
-            date_label = date_text
+            continue
 
         rows.append({
-            "Day": date_label,
+            "Date": check_in_date,
             "Completion": completion_score(completion_status)
         })
 
-    return rows
+    return sorted(rows, key=lambda row: row["Date"])
 
 
 # ----------------------------
@@ -1568,7 +1568,7 @@ def render_check_progress():
 
     st.write(
         "Progress is estimated from daily check-ins for each goal. "
-        "Each goal tab has its own progress estimate and consistency graph."
+        "Each goal tab has its own progress estimate and consistency trend."
     )
 
     goals = load_goals()
@@ -1597,18 +1597,65 @@ def render_check_progress():
                 """
             )
 
-            st.subheader("Consistency Graph")
+            st.subheader("Consistency Trend")
 
             if consistency_data:
                 df = pd.DataFrame(consistency_data)
+                df = df.sort_values("Date").reset_index(drop=True)
+                df["7-day average"] = df.rolling(
+                    window="7D",
+                    on="Date",
+                    min_periods=1,
+                )["Completion"].mean()
 
-                st.line_chart(
-                    df,
-                    x="Day",
-                    y="Completion"
+                date_axis = alt.Axis(
+                    title="Date",
+                    format="%b %d",
+                    labelAngle=-45,
+                    tickCount=8,
+                )
+                x_encoding = alt.X(
+                    "Date:T",
+                    axis=date_axis,
+                    sort="ascending",
+                )
+
+                bars = alt.Chart(df).mark_bar(
+                    color="#8FB9E1",
+                    opacity=0.7,
+                ).encode(
+                    x=x_encoding,
+                    y=alt.Y(
+                        "Completion:Q",
+                        title="Completion (%)",
+                        scale=alt.Scale(domain=[0, 100]),
+                    ),
+                    tooltip=[
+                        alt.Tooltip("Date:T", title="Date", format="%b %d, %Y"),
+                        alt.Tooltip("Completion:Q", title="Daily completion", format=".0f"),
+                    ],
+                )
+
+                trend = alt.Chart(df).mark_line(
+                    color="#174A7E",
+                    strokeWidth=3,
+                    point=True,
+                ).encode(
+                    x=x_encoding,
+                    y=alt.Y("7-day average:Q", title="Completion (%)"),
+                    tooltip=[
+                        alt.Tooltip("Date:T", title="Date", format="%b %d, %Y"),
+                        alt.Tooltip("7-day average:Q", title="7-day average", format=".1f"),
+                    ],
+                )
+
+                st.altair_chart(
+                    (bars + trend).properties(height=360).interactive(),
+                    use_container_width=True,
                 )
 
                 st.caption(
+                    "Bars show daily completion. The trend line shows the 7-day average. "
                     "Completed = 100%, partly completed = 40%, skipped = 0%."
                 )
             else:
