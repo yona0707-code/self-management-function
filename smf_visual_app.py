@@ -1706,10 +1706,12 @@ def render_check_progress():
             st.markdown(
                 f"""
                 {format_progress_pace(progress_value, progress_gap)}
-
-                Ideal progress today: **{ideal_progress_today:.1f}%**<br>
-                Progress gap: **{progress_gap:+.1f}%**
-
+                """
+            )
+            st.write(f"Ideal progress today: **{ideal_progress_today:.1f}%**")
+            st.write(f"Progress gap: **{progress_gap:+.1f}%**")
+            st.markdown(
+                """
                 *Ideal pace assumes steady progress from the goal start date to the deadline.*
 
                 How the app estimates progress:
