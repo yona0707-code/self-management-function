@@ -18,7 +18,7 @@ The project includes two interfaces:
 - Complete a daily wellbeing and availability check-in
 - Receive an adaptive work mode such as **Lock In**, **Steady**, **Minimum**, **Recovery**, or **Catch-Up**
 - Build a study-style profile and receive execution advice
-- Track estimated progress and review check-in history
+- Track estimated progress, daily effort, integrated effort, and check-in history
 - Keep the public app read-only while owner actions are protected by a password
 - Store all information locally in JSON and CSV files
 

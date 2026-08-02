@@ -570,6 +570,16 @@ def completion_score(completion_status):
     return 0
 
 
+def completion_weight(completion_status):
+    if completion_status == "Completed":
+        return 1.0
+
+    if completion_status == "Partly completed":
+        return 0.4
+
+    return 0.0
+
+
 def find_goal_by_id(goals, goal_id):
     for goal in goals:
         if goal["id"] == goal_id:
@@ -960,6 +970,55 @@ def get_consistency_data(goal_name, days=90):
         })
 
     return sorted(rows, key=lambda row: row["Date"])
+
+
+def get_effort_data(goal_name, days=90):
+    history = read_history()
+    rows_by_date = {}
+    cutoff = date.today() - timedelta(days=days - 1)
+
+    for item in history:
+        if item.get("goal_name", "") != goal_name:
+            continue
+
+        completion_status = item.get("completion_status", "")
+        if not completion_status:
+            continue
+
+        try:
+            check_in_date = datetime.strptime(
+                item.get("date", ""),
+                "%Y-%m-%d %H:%M:%S",
+            ).date()
+            normal_goal_minutes = float(item.get("normal_goal_minutes", 0))
+            final_multiplier = float(item.get("final_multiplier", 0))
+        except (TypeError, ValueError):
+            continue
+
+        if check_in_date < cutoff:
+            continue
+
+        planned_effort_minutes = normal_goal_minutes * final_multiplier
+        daily_effort_minutes = (
+            planned_effort_minutes * completion_weight(completion_status)
+        )
+        rows_by_date[check_in_date] = (
+            rows_by_date.get(check_in_date, 0) + daily_effort_minutes
+        )
+
+    rows = []
+    cumulative_effort_minutes = 0.0
+
+    for check_in_date in sorted(rows_by_date):
+        daily_effort_minutes = rows_by_date[check_in_date]
+        cumulative_effort_minutes += daily_effort_minutes
+        rows.append({
+            "Date": check_in_date,
+            "Daily effort minutes": daily_effort_minutes,
+            "Cumulative effort minutes": cumulative_effort_minutes,
+        })
+
+    return rows
 
 
 # ----------------------------
@@ -1568,7 +1627,7 @@ def render_check_progress():
 
     st.write(
         "Progress is estimated from daily check-ins for each goal. "
-        "Each goal tab has its own progress estimate and consistency trend."
+        "Each goal tab has its own progress estimate and effort trend."
     )
 
     goals = load_goals()
@@ -1581,6 +1640,7 @@ def render_check_progress():
         progress_value = goal.get("estimated_progress", 0)
         recent_evidence = get_recent_progress_evidence(goal["goal_name"])
         consistency_data = get_consistency_data(goal["goal_name"])
+        effort_data = get_effort_data(goal["goal_name"])
 
         with st.expander(goal["goal_name"], expanded=True):
             st.subheader("Estimated Progress")
@@ -1597,16 +1657,17 @@ def render_check_progress():
                 """
             )
 
-            st.subheader("Consistency Trend")
+            st.subheader("Daily Effort and Integrated Effort")
 
-            if consistency_data:
-                df = pd.DataFrame(consistency_data)
+            st.write(
+                "Daily effort estimates how much work was actually completed on each day. "
+                "Integrated Effort estimates accumulated work over time. Since the app "
+                "records daily data, the integral is approximated using a cumulative sum."
+            )
+
+            if effort_data:
+                df = pd.DataFrame(effort_data)
                 df = df.sort_values("Date").reset_index(drop=True)
-                df["7-day average"] = df.rolling(
-                    window="7D",
-                    on="Date",
-                    min_periods=7,
-                )["Completion"].mean()
 
                 date_axis = alt.Axis(
                     title="Date",
@@ -1626,39 +1687,62 @@ def render_check_progress():
                 ).encode(
                     x=x_encoding,
                     y=alt.Y(
-                        "Completion:Q",
-                        title="Completion (%)",
-                        scale=alt.Scale(domain=[0, 100]),
+                        "Daily effort minutes:Q",
+                        title="Daily effort minutes",
                     ),
                     tooltip=[
                         alt.Tooltip("Date:T", title="Date", format="%b %d, %Y"),
-                        alt.Tooltip("Completion:Q", title="Daily completion", format=".0f"),
+                        alt.Tooltip(
+                            "Daily effort minutes:Q",
+                            title="Daily effort minutes",
+                            format=".1f",
+                        ),
                     ],
                 )
 
                 trend = alt.Chart(df).mark_line(
                     color="#174A7E",
                     strokeWidth=3,
+                    point=True,
                 ).encode(
                     x=x_encoding,
-                    y=alt.Y("7-day average:Q", title="Completion (%)"),
+                    y=alt.Y(
+                        "Cumulative effort minutes:Q",
+                        title="Cumulative effort minutes",
+                    ),
                     tooltip=[
                         alt.Tooltip("Date:T", title="Date", format="%b %d, %Y"),
-                        alt.Tooltip("7-day average:Q", title="7-day average", format=".1f"),
+                        alt.Tooltip(
+                            "Cumulative effort minutes:Q",
+                            title="Cumulative effort minutes",
+                            format=".1f",
+                        ),
                     ],
                 )
 
                 st.altair_chart(
-                    (bars + trend).properties(height=360).interactive(),
+                    alt.layer(bars, trend)
+                    .resolve_scale(y="independent")
+                    .properties(height=360)
+                    .interactive(),
                     use_container_width=True,
                 )
 
                 st.caption(
-                    "Bars show daily completion. The trend line shows the 7-day average. "
-                    "Completed = 100%, partly completed = 40%, skipped = 0%."
+                    "Steeper cumulative slope means effort is accumulating quickly. "
+                    "Flat sections mean skipped days or no recorded effort."
                 )
             else:
-                st.caption("No consistency data has been recorded yet for this goal.")
+                st.caption("No effort data has been recorded yet for this goal.")
+
+            if consistency_data:
+                average_consistency = sum(
+                    item["Completion"] for item in consistency_data
+                ) / len(consistency_data)
+                st.metric(
+                    "Consistency score (secondary)",
+                    f"{round(average_consistency)}%",
+                )
 
             if recent_evidence:
                 st.subheader("Recent Daily Check-In Evidence")
@@ -1912,10 +1996,11 @@ def render_function_explanation():
 
     st.markdown("---")
 
-    st.subheader("9. Consistency graph")
+    st.subheader("9. Daily Effort and Integrated Effort")
 
     st.write(
-        "The Check Progress page shows a consistency graph for each goal."
+        "The Check Progress page shows daily effort bars and an integrated-effort line "
+        "for each goal, with consistency retained as a secondary score."
     )
 
     st.markdown(

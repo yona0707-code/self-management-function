@@ -133,7 +133,7 @@ Each goal stores:
 - Average time needed for the action (`normal_goal_minutes`)
 - Estimated progress
 
-## 6. Progress and consistency
+## 6. Progress and effort
 
 Progress is estimated from daily check-in evidence instead of manual progress input:
 
@@ -144,6 +144,18 @@ Progress is estimated from daily check-in evidence instead of manual progress in
 | Skipped | +0% | 0% |
 
 This is a practical consistency signal, not a claim of perfect subject mastery.
+
+The main progress visualization uses effort in minutes:
+
+```text
+planned_effort_minutes = normal_goal_minutes × final_multiplier
+daily_effort_minutes = planned_effort_minutes × completion_weight
+cumulative_effort_minutes = cumulative sum of daily_effort_minutes
+```
+
+Completed, partly completed, and skipped tasks have completion weights of `1.0`,
+`0.4`, and `0.0`. Bars show daily effort and a line shows integrated
+(cumulative) effort. Completion consistency remains a secondary score.
 
 ## 7. Study Style Profile
 
