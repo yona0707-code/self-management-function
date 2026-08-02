@@ -28,7 +28,7 @@
 
 import streamlit as st
 from pathlib import Path
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import json
 import csv
 import math
@@ -927,9 +927,10 @@ def get_recent_progress_evidence(goal_name, limit=5):
     return list(reversed(evidence[-limit:]))
 
 
-def get_consistency_data(goal_name, limit=14):
+def get_consistency_data(goal_name, days=90):
     history = read_history()
     rows = []
+    cutoff = date.today() - timedelta(days=days - 1)
 
     for item in history:
         if item.get("goal_name", "") != goal_name:
@@ -943,10 +944,13 @@ def get_consistency_data(goal_name, limit=14):
         date_text = item.get("date", "")
 
         try:
-            date_label = datetime.strptime(
+            check_in_date = datetime.strptime(
                 date_text,
                 "%Y-%m-%d %H:%M:%S"
-            ).strftime("%b %d")
+            )
+            if check_in_date.date() < cutoff:
+                continue
+            date_label = check_in_date.strftime("%b %d")
         except ValueError:
             date_label = date_text
 
@@ -955,7 +959,7 @@ def get_consistency_data(goal_name, limit=14):
             "Completion": completion_score(completion_status)
         })
 
-    return rows[-limit:]
+    return rows
 
 
 # ----------------------------

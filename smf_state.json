@@ -1,0 +1,79 @@
+{
+    "last_task_by_goal": {
+        "1": {
+            "task_sentence": "Complete timed sat questions: 42 questions.",
+            "task_structured": {
+                "goal_id": 1,
+                "goal_name": "Achieve 1500+ on the SAT",
+                "task_sentence": "Complete timed sat questions: 42 questions.",
+                "amount": 42,
+                "unit": "questions",
+                "pressure": 0.478
+            },
+            "mode": "CATCH-UP",
+            "date": "2026-07-31 18:15:00",
+            "plan_id": "e5e97084-1e80-5466-8b1c-53c5b8d8706c",
+            "progress_applied_plan_id": "demo-data"
+        },
+        "2": {
+            "task_sentence": "Solve past-paper problems: 14 problems.",
+            "task_structured": {
+                "goal_id": 2,
+                "goal_name": "Earn A*s in A-Level Mathematics and Physics",
+                "task_sentence": "Solve past-paper problems: 14 problems.",
+                "amount": 14,
+                "unit": "problems",
+                "pressure": 0.276
+            },
+            "mode": "CATCH-UP",
+            "date": "2026-08-01 17:15:00",
+            "plan_id": "da9e37de-46de-5e76-9353-80ce8b15eab1",
+            "progress_applied_plan_id": "demo-data"
+        },
+        "3": {
+            "task_sentence": "Work on the portfolio app: 90 minutes.",
+            "task_structured": {
+                "goal_id": 3,
+                "goal_name": "Build and launch a university portfolio app",
+                "task_sentence": "Work on the portfolio app: 90 minutes.",
+                "amount": 90,
+                "unit": "minutes",
+                "pressure": 0.347
+            },
+            "mode": "CATCH-UP",
+            "date": "2026-08-01 18:15:00",
+            "plan_id": "3e79f739-5538-5b35-8bf2-b80232b39c21",
+            "progress_applied_plan_id": "demo-data"
+        },
+        "4": {
+            "task_sentence": "Draft or revise application essays: 600 words.",
+            "task_structured": {
+                "goal_id": 4,
+                "goal_name": "Complete five university application essays",
+                "task_sentence": "Draft or revise application essays: 600 words.",
+                "amount": 600,
+                "unit": "words",
+                "pressure": 0.499
+            },
+            "mode": "CATCH-UP",
+            "date": "2026-08-02 17:15:00",
+            "plan_id": "0e13a188-0a87-5ca2-a7ca-a5ae7d38d89e",
+            "progress_applied_plan_id": "demo-data"
+        },
+        "5": {
+            "task_sentence": "Research and prepare scholarship materials: 54 minutes.",
+            "task_structured": {
+                "goal_id": 5,
+                "goal_name": "Submit a competitive scholarship application",
+                "task_sentence": "Research and prepare scholarship materials: 54 minutes.",
+                "amount": 54,
+                "unit": "minutes",
+                "pressure": 0.622
+            },
+            "mode": "CATCH-UP",
+            "date": "2026-08-02 18:15:00",
+            "plan_id": "781cb8ad-9eae-5b80-9b57-9224e14e956c",
+            "progress_applied_plan_id": "demo-data"
+        }
+    }
+}
