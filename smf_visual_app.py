@@ -1007,15 +1007,11 @@ def get_effort_data(goal_name, days=90):
         )
 
     rows = []
-    cumulative_effort_minutes = 0.0
 
     for check_in_date in sorted(rows_by_date):
-        daily_effort_minutes = rows_by_date[check_in_date]
-        cumulative_effort_minutes += daily_effort_minutes
         rows.append({
             "Date": check_in_date,
-            "Daily effort minutes": daily_effort_minutes,
-            "Cumulative effort minutes": cumulative_effort_minutes,
+            "Daily effort minutes": rows_by_date[check_in_date],
         })
 
     return rows
@@ -1657,17 +1653,40 @@ def render_check_progress():
                 """
             )
 
-            st.subheader("Daily Effort and Integrated Effort")
+            st.subheader("Daily Effort")
 
             st.write(
-                "Daily effort estimates how much work was actually completed on each day. "
-                "Integrated Effort estimates accumulated work over time. Since the app "
-                "records daily data, the integral is approximated using a cumulative sum."
+                "Daily effort estimates how much work was completed each day. "
+                "The integrated effort is the area under the daily effort curve. "
+                "Since the app records daily data, this is approximated by summing "
+                "daily effort values."
             )
 
             if effort_data:
                 df = pd.DataFrame(effort_data)
                 df = df.sort_values("Date").reset_index(drop=True)
+
+                total_integrated_effort = df["Daily effort minutes"].sum()
+                average_daily_effort = df["Daily effort minutes"].mean()
+                highest_effort_row = df.loc[
+                    df["Daily effort minutes"].idxmax()
+                ]
+
+                total_col, average_col, highest_col = st.columns(3)
+                total_col.metric(
+                    "Total integrated effort",
+                    f"{total_integrated_effort:.1f} min",
+                )
+                average_col.metric(
+                    "Average daily effort",
+                    f"{average_daily_effort:.1f} min",
+                )
+                highest_col.metric(
+                    "Highest effort day",
+                    highest_effort_row["Date"].strftime("%b %d, %Y"),
+                    delta=f"{highest_effort_row['Daily effort minutes']:.1f} min",
+                    delta_color="off",
+                )
 
                 date_axis = alt.Axis(
                     title="Date",
@@ -1681,7 +1700,7 @@ def render_check_progress():
                     sort="ascending",
                 )
 
-                bars = alt.Chart(df).mark_bar(
+                daily_effort_chart = alt.Chart(df).mark_bar(
                     color="#8FB9E1",
                     opacity=0.7,
                 ).encode(
@@ -1700,37 +1719,10 @@ def render_check_progress():
                     ],
                 )
 
-                trend = alt.Chart(df).mark_line(
-                    color="#174A7E",
-                    strokeWidth=3,
-                    point=True,
-                ).encode(
-                    x=x_encoding,
-                    y=alt.Y(
-                        "Cumulative effort minutes:Q",
-                        title="Cumulative effort minutes",
-                    ),
-                    tooltip=[
-                        alt.Tooltip("Date:T", title="Date", format="%b %d, %Y"),
-                        alt.Tooltip(
-                            "Cumulative effort minutes:Q",
-                            title="Cumulative effort minutes",
-                            format=".1f",
-                        ),
-                    ],
-                )
-
                 st.altair_chart(
-                    alt.layer(bars, trend)
-                    .resolve_scale(y="independent")
-                    .properties(height=360)
+                    daily_effort_chart.properties(height=360)
                     .interactive(),
                     use_container_width=True,
-                )
-
-                st.caption(
-                    "Steeper cumulative slope means effort is accumulating quickly. "
-                    "Flat sections mean skipped days or no recorded effort."
                 )
             else:
                 st.caption("No effort data has been recorded yet for this goal.")
@@ -1996,19 +1988,27 @@ def render_function_explanation():
 
     st.markdown("---")
 
-    st.subheader("9. Daily Effort and Integrated Effort")
+    st.subheader("9. Daily Effort")
 
     st.write(
-        "The Check Progress page shows daily effort bars and an integrated-effort line "
-        "for each goal, with consistency retained as a secondary score."
+        "The Check Progress page shows chronological daily effort bars for each goal. "
+        "Integrated effort is presented as a summary metric, together with average "
+        "daily effort and the highest effort day."
     )
 
     st.markdown(
         """
-        - Completed → 100%
-        - Partly completed → 40%
-        - Skipped → 0%
+        - Completed → completion weight 1.0
+        - Partly completed → completion weight 0.4
+        - Skipped → completion weight 0.0
         """
+    )
+
+    st.write(
+        "Daily effort estimates how much work was completed each day. "
+        "The integrated effort is the area under the daily effort curve. "
+        "Since the app records daily data, this is approximated by summing "
+        "daily effort values."
     )
 
     st.write(

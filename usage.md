@@ -87,7 +87,7 @@ Use the sidebar menu to open:
 
 - **Home** — start a check-in, add a goal, or see current goal summaries.
 - **View Goal Tabs** — review importance, deadlines, daily actions, and expected study time.
-- **Check Progress** — see estimated progress, daily and integrated effort, a secondary consistency score, and recent completion evidence for each goal.
+- **Check Progress** — see chronological daily effort, total integrated effort, average daily effort, the highest effort day, a secondary consistency score, and recent completion evidence for each goal.
 - **History** — review the 15 most recent check-ins, recommended modes, tasks, and function values.
 - **Study Style Profile** — review recommendations or retake the test.
 - **What is YMF(x)?** — read how the planning function works.

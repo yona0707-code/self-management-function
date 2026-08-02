@@ -150,12 +150,17 @@ The main progress visualization uses effort in minutes:
 ```text
 planned_effort_minutes = normal_goal_minutes × final_multiplier
 daily_effort_minutes = planned_effort_minutes × completion_weight
-cumulative_effort_minutes = cumulative sum of daily_effort_minutes
+total_integrated_effort = sum of daily_effort_minutes over the selected period
 ```
 
 Completed, partly completed, and skipped tasks have completion weights of `1.0`,
-`0.4`, and `0.0`. Bars show daily effort and a line shows integrated
-(cumulative) effort. Completion consistency remains a secondary score.
+`0.4`, and `0.0`. The main graph shows chronological daily effort bars, not
+cumulative effort or completion percentage. Total integrated effort, average
+daily effort, and the highest effort day are shown as summary metrics.
+
+Daily effort estimates how much work was completed each day. The integrated
+effort is the area under the daily effort curve. Since the app records daily
+data, this is approximated by summing daily effort values.
 
 ## 7. Study Style Profile
 
