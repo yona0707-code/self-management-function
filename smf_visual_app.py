@@ -249,14 +249,21 @@ def save_state(state):
 
 
 def append_history(data):
-    file_exists = HISTORY_FILE.exists()
+    """Append a row, expanding an older CSV schema when new fields are added."""
+    existing_rows = read_history()
+    existing_fields = list(existing_rows[0].keys()) if existing_rows else []
+    fieldnames = existing_fields + [key for key in data if key not in existing_fields]
+
+    if existing_rows and fieldnames != existing_fields:
+        with open(HISTORY_FILE, mode="w", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(existing_rows)
 
     with open(HISTORY_FILE, mode="a", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=data.keys())
-
-        if not file_exists:
+        writer = csv.DictWriter(file, fieldnames=fieldnames or list(data.keys()))
+        if not existing_rows:
             writer.writeheader()
-
         writer.writerow(data)
 
 
@@ -603,6 +610,73 @@ def generate_execution_advice(profile, mode, task, goal):
         advice.append("Keep the task small on purpose. The goal is to stay connected, not to force maximum effort.")
 
     return advice
+
+
+def study_style_influence(profile):
+    """Return plain-language explanations of profile decisions for a task."""
+    profile = profile or {}
+    focus_style = profile.get("focus_style", "Flexible Focus")
+
+    focus_explanations = {
+        "Sprint Focus": "Short focus blocks with breaks were suggested.",
+        "Deep Focus": "One longer, deep-focus block was suggested.",
+        "Flexible Focus": "A flexible focus block was suggested, with smaller rounds if focus drops.",
+    }
+
+    start_difficulty = float(profile.get("start_difficulty", 0.5))
+    metacognition = float(profile.get("metacognitive_regulation", 0.5))
+    cognitive_load = float(profile.get("cognitive_load_sensitivity", 0.5))
+    sensory = float(profile.get("motor_sensory_regulation", 0.5))
+
+    if metacognition >= 0.65:
+        metacognition_text = "Guidance was light because the profile supports choosing and checking a preferred method."
+    elif metacognition < 0.40:
+        metacognition_text = "Guidance was structured with a simple sequence and a short reflection step."
+    else:
+        metacognition_text = "Guidance was balanced: use a preferred method, then add structure if needed."
+
+    return {
+        "focus_style": f"{focus_style}: {focus_explanations.get(focus_style, focus_explanations['Flexible Focus'])}",
+        "start_difficulty": (
+            "A 5-minute starter step was added because starting difficulty is high."
+            if start_difficulty >= 0.65
+            else "No separate starter step was added because starting difficulty is not high."
+        ),
+        "metacognitive_regulation": metacognition_text,
+        "cognitive_load_sensitivity": (
+            "Instructions were simplified to the next 2–3 visible steps."
+            if cognitive_load >= 0.65
+            else "Extra instruction simplification was not needed."
+        ),
+        "motor_sensory_regulation": (
+            "Pen or stress-ball advice was added; phone use as a fidget was discouraged."
+            if sensory >= 0.65
+            else "Pen or stress-ball advice was not added."
+        ),
+    }
+
+
+def demo_task_reasoning():
+    """Public, non-persistent example used when no saved history exists."""
+    return {
+        "date": "Demo",
+        "goal_name": "Prepare for a mathematics exam",
+        "mode": "STEADY",
+        "task": "Prepare for a mathematics exam: solve practice questions — 10 questions",
+        "goal_pressure": 0.58,
+        "capacity": 0.62,
+        "burnout_risk": 0.28,
+        "time_fit": 0.75,
+        "style_adjustment": 0.96,
+        "final_multiplier": 1.0,
+        "profile_snapshot": json.dumps({
+            "focus_style": "Sprint Focus",
+            "start_difficulty": 0.75,
+            "metacognitive_regulation": 0.5,
+            "cognitive_load_sensitivity": 0.75,
+            "motor_sensory_regulation": 0.75,
+        }),
+    }
 
 
 # ----------------------------
@@ -1644,6 +1718,7 @@ def render_daily_check_in():
             "burnout_risk": plan["burnout_risk"],
             "goal_pressure": plan["goal_pressure"],
             "task": plan["task"]["task_sentence"],
+            "profile_snapshot": json.dumps(profile) if profile else "",
             "progress_update": json.dumps(progress_update) if progress_update else ""
         }
 
@@ -1843,9 +1918,92 @@ def render_history():
             st.write(f"Style adjustment: {item.get('style_adjustment', '')}")
             st.write(f"Final multiplier: {item.get('final_multiplier', '')}")
 
+            st.markdown("---")
+            st.subheader("Task Reasoning")
+            render_task_reasoning_details(item)
+
             update = item.get("progress_update", "")
             if update:
                 st.write(f"Progress update: {update}")
+
+
+def history_number(item, key):
+    try:
+        return float(item.get(key, 0))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def profile_for_history_item(item):
+    snapshot = item.get("profile_snapshot", "")
+    if snapshot:
+        try:
+            return json.loads(snapshot)
+        except (TypeError, json.JSONDecodeError):
+            pass
+    return load_study_profile()
+
+
+def render_task_reasoning_details(item):
+    """Render one saved plan without providing any write controls."""
+    st.markdown(f"**Goal name:** {item.get('goal_name', 'Unknown goal')}")
+    st.markdown(f"**Generated mode:** {mode_label(item.get('mode', ''))}")
+    st.markdown(f"**Generated task:** {item.get('task', 'No task saved')}")
+
+    st.markdown("#### Function values")
+    values = [
+        ("Goal Pressure", "goal_pressure", "Goal urgency"),
+        ("Capacity", "capacity", "Realistic capacity today"),
+        ("Burnout Risk", "burnout_risk", "Risk from pushing too hard"),
+        ("Time Fit", "time_fit", "Available time compared with normal time"),
+        ("Style Adjustment", "style_adjustment", "Study style effect on capacity"),
+        ("Task Multiplier", "final_multiplier", "Mode × study style"),
+    ]
+
+    for row_start in range(0, len(values), 3):
+        columns = st.columns(3)
+        for column, (label, key, caption) in zip(columns, values[row_start:row_start + 3]):
+            value = history_number(item, key)
+            column.metric(label, score_percent(value))
+            column.caption(caption)
+
+    st.markdown("#### Study Style Profile influence")
+    influence = study_style_influence(profile_for_history_item(item))
+    st.markdown(f"**Focus style:** {influence['focus_style']}")
+    st.markdown(f"**Start difficulty:** {influence['start_difficulty']}")
+    st.markdown(f"**Metacognitive regulation:** {influence['metacognitive_regulation']}")
+    st.markdown(f"**Cognitive load sensitivity:** {influence['cognitive_load_sensitivity']}")
+    st.markdown(f"**Motor/sensory regulation:** {influence['motor_sensory_regulation']}")
+
+    st.info(
+        "This task was generated by SMF(x), which combines goal state, daily condition, "
+        "completion history, and study style profile."
+    )
+
+
+def render_task_reasoning():
+    st.title("Task Reasoning")
+    st.write(
+        "This read-only explanation shows how the latest generated task, or a selected "
+        "history item, relates to the function and Study Style Profile."
+    )
+
+    history = read_history()
+    if not history:
+        st.info("No saved task history exists yet, so the example below uses demo data and is not saved.")
+        render_task_reasoning_details(demo_task_reasoning())
+        return
+
+    recent_items = list(reversed(history[-15:]))
+    selected_index = st.selectbox(
+        "Saved task",
+        range(len(recent_items)),
+        format_func=lambda index: (
+            f"{recent_items[index].get('date', '')} — "
+            f"{recent_items[index].get('goal_name', '')}"
+        ),
+    )
+    render_task_reasoning_details(recent_items[selected_index])
 
 
 def render_function_explanation():
@@ -2125,6 +2283,10 @@ def main():
         st.session_state["screen"] = "history"
         st.rerun()
 
+    if st.sidebar.button("Task Reasoning", use_container_width=True):
+        st.session_state["screen"] = "task_reasoning"
+        st.rerun()
+
     if owner_unlocked:
         st.sidebar.markdown("---")
         st.sidebar.subheader("Owner actions")
@@ -2173,6 +2335,9 @@ def main():
 
     elif screen == "history":
         render_history()
+
+    elif screen == "task_reasoning":
+        render_task_reasoning()
 
     elif screen == "function_explanation":
         render_function_explanation()
