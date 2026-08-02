@@ -52,6 +52,8 @@ Select **Add New Goal** on the home screen and enter:
 
 Select **Add Goal Tab** to save it. Create separate tabs for goals with different deadlines or daily actions.
 
+![Add a new academic goal](screenshots/add_new_goal.png)
+
 ## 3. Complete a Daily Check-In
 
 Select **Daily Check-In** and follow these steps:
