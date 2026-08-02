@@ -65,6 +65,8 @@ Select **Daily Check-In** and follow these steps:
 5. Optionally enter a fun or social plan that the study plan should take into account.
 6. Select **Generate Today's Plan for This Goal**.
 
+![Daily Check-In](screenshots/daily_checkin.png)
+
 The app returns:
 
 - Today's mode: **LOCK IN**, **STEADY**, **MINIMUM**, **RECOVERY**, or **CATCH-UP**.
