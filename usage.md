@@ -34,6 +34,10 @@ On your first visit, the app opens the **Study Style Test** automatically.
 
 The profile helps the app adjust task size, task structure, and execution advice. It is a planning aid, not a clinical or diagnostic test. You can take the test again later by opening **Study Style Profile** from the sidebar and selecting **Retake Study Style Test**.
 
+![Study Style Profile overview](screenshots/study_style_profile_1.png)
+
+![Study Style Profile recommendations](screenshots/study_style_profile_2.png)
+
 ## 2. Add an academic goal
 
 Select **Add New Goal** on the home screen and enter:
