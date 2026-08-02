@@ -1605,7 +1605,7 @@ def render_check_progress():
                 df["7-day average"] = df.rolling(
                     window="7D",
                     on="Date",
-                    min_periods=1,
+                    min_periods=7,
                 )["Completion"].mean()
 
                 date_axis = alt.Axis(
@@ -1639,7 +1639,6 @@ def render_check_progress():
                 trend = alt.Chart(df).mark_line(
                     color="#174A7E",
                     strokeWidth=3,
-                    point=True,
                 ).encode(
                     x=x_encoding,
                     y=alt.Y("7-day average:Q", title="Completion (%)"),

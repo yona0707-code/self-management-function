@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import math
+import random
 import uuid
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
@@ -43,6 +43,57 @@ FUN_PLANS = [
     "Gaming session at 9pm", "Evening walk at the park",
 ]
 
+RANDOM_SEED = 20260802
+
+
+def phase_probabilities(day_index: int) -> tuple[float, float, float]:
+    """Return completed, partial, and skipped odds for a point in the demo."""
+    if day_index < 28:  # An uneven start while the student finds a routine.
+        return (0.43, 0.32, 0.25)
+    if day_index < 55:  # Improvement is gradual rather than a sudden step.
+        improvement = (day_index - 28) / 26
+        return (
+            0.50 + 0.20 * improvement,
+            0.31 - 0.07 * improvement,
+            0.19 - 0.13 * improvement,
+        )
+    if day_index < 62:  # A stressful week disrupts the developing routine.
+        return (0.27, 0.41, 0.32)
+    # The recovered routine is stronger, but still has believable off-days.
+    return (0.76, 0.19, 0.05)
+
+
+def choose_status(
+    rng: random.Random,
+    probabilities: tuple[float, float, float],
+    ability_shift: float,
+    weekend: bool,
+    yesterday_status: str | None,
+) -> str:
+    completed, partial, skipped = probabilities
+    completed += ability_shift
+    skipped -= ability_shift * 0.65
+
+    # Weekends and yesterday's outcome add small, non-periodic behavioral effects.
+    if weekend:
+        completed -= 0.05
+        partial += 0.02
+        skipped += 0.03
+    if yesterday_status == "Skipped":
+        completed -= 0.04
+        partial += 0.03
+        skipped += 0.01
+    elif yesterday_status == "Completed":
+        completed += 0.025
+        skipped -= 0.015
+
+    weights = [max(0.01, completed), max(0.01, partial), max(0.01, skipped)]
+    return rng.choices(
+        ["Completed", "Partly completed", "Skipped"],
+        weights=weights,
+        k=1,
+    )[0]
+
 
 def clamp(value: float, low: float, high: float) -> float:
     return max(low, min(value, high))
@@ -53,13 +104,15 @@ def rounded(value: float) -> float:
 
 
 def create_data(today: date) -> tuple[list[dict], dict, list[dict]]:
+    rng = random.Random(RANDOM_SEED)
     start = today - timedelta(days=89)
     deadlines = [today + timedelta(days=template[2]) for template in GOAL_TEMPLATES]
     goals = []
     rows = []
     latest_by_goal = {}
-    occurrence = [0] * len(GOAL_TEMPLATES)
     progress = [0.0] * len(GOAL_TEMPLATES)
+    previous_status = [None] * len(GOAL_TEMPLATES)
+    ability_shifts = [rng.uniform(-0.055, 0.055) for _ in GOAL_TEMPLATES]
 
     for goal_id, (name, importance, _, action, amount, unit, minutes) in enumerate(GOAL_TEMPLATES, 1):
         goals.append({
@@ -75,35 +128,31 @@ def create_data(today: date) -> tuple[list[dict], dict, list[dict]]:
             "normal_goal_minutes": minutes,
         })
 
-    # Two rotating goal check-ins per day gives each goal 36 observations.
+    # One observation per goal per day supports an honest seven-day trend.
     for day_index in range(90):
         check_date = start + timedelta(days=day_index)
-        for slot in range(2):
-            goal_index = (day_index * 2 + slot) % len(goals)
-            goal = goals[goal_index]
-            check_number = occurrence[goal_index]
-            occurrence[goal_index] += 1
-
-            # Exactly half skipped; the other half splits evenly between completed and partial.
-            if check_number % 2:
-                status = "Skipped"
-            elif (check_number // 2) % 2:
-                status = "Partly completed"
-            else:
-                status = "Completed"
+        for goal_index, goal in enumerate(goals):
+            weekend = check_date.weekday() >= 5
+            status = choose_status(
+                rng,
+                phase_probabilities(day_index),
+                ability_shifts[goal_index],
+                weekend,
+                previous_status[goal_index],
+            )
+            previous_status[goal_index] = status
 
             gain = {"Completed": 1.0, "Partly completed": 0.4, "Skipped": 0.0}[status]
             old_progress = progress[goal_index]
             progress[goal_index] = rounded(old_progress + gain)
 
-            wave = math.sin((day_index + goal_index * 4) / 7)
-            weekend = check_date.weekday() >= 5
-            stress = clamp(0.46 - wave * 0.16 + (0.12 if status == "Skipped" else 0), 0.1, 0.9)
-            energy = clamp(0.62 + wave * 0.17 - (0.12 if weekend else 0), 0.1, 0.9)
-            concentration = clamp(0.66 + wave * 0.13 - (0.16 if status == "Skipped" else 0), 0.1, 0.9)
-            mood = clamp(0.64 + math.cos(day_index / 9) * 0.14, 0.1, 0.9)
+            stressful_week = 55 <= day_index < 62
+            stress = clamp(rng.gauss(0.47 + (0.22 if stressful_week else 0) + (0.08 if status == "Skipped" else 0), 0.09), 0.1, 0.95)
+            energy = clamp(rng.gauss(0.66 - (0.15 if stressful_week else 0) - (0.07 if weekend else 0), 0.08), 0.1, 0.95)
+            concentration = clamp(rng.gauss(0.69 - (0.17 if stressful_week else 0) - (0.12 if status == "Skipped" else 0), 0.08), 0.1, 0.95)
+            mood = clamp(rng.gauss(0.67 - (0.13 if stressful_week else 0), 0.09), 0.1, 0.95)
             readiness = clamp((energy + concentration) / 2 - (0.1 if status == "Skipped" else 0), 0.1, 0.9)
-            available = [30, 60, 90, 120][(day_index + goal_index) % 4]
+            available = rng.choices([30, 45, 60, 90, 120], weights=[10, 15, 30, 28, 17], k=1)[0]
             time_fit = clamp(available / goal["normal_goal_minutes"], 0, 1.5)
             capacity = time_fit * energy * concentration * readiness * (1 - 0.6 * stress)
             burnout = 0.45 * stress**2 + 0.2 * (1 - mood) + 0.2 * (1 - energy) + 0.15 * (1 - readiness)
@@ -122,8 +171,8 @@ def create_data(today: date) -> tuple[list[dict], dict, list[dict]]:
                 mode, multiplier = "STEADY", 1.0
 
             planned_amount = round(goal["normal_amount"] * multiplier)
-            has_plan = (check_number + goal_index) % 2 == 0
-            timestamp = datetime.combine(check_date, time(17 + slot, 15)).strftime("%Y-%m-%d %H:%M:%S")
+            has_plan = rng.random() < 0.42
+            timestamp = datetime.combine(check_date, time(17 + goal_index, rng.choice([5, 15, 30, 45]))).strftime("%Y-%m-%d %H:%M:%S")
             task = f"{goal['main_action'].capitalize()}: {planned_amount} {goal['unit']}."
             update = ""
             if gain:
@@ -140,7 +189,7 @@ def create_data(today: date) -> tuple[list[dict], dict, list[dict]]:
                 "normal_goal_minutes": goal["normal_goal_minutes"], "time_fit": rounded(time_fit),
                 "style_adjustment": 1.0, "style_task_multiplier": 1.0,
                 "final_multiplier": multiplier, "has_fun_plan": has_plan,
-                "fun_plan": FUN_PLANS[(day_index + goal_index) % len(FUN_PLANS)] if has_plan else "",
+                "fun_plan": rng.choice(FUN_PLANS) if has_plan else "",
                 "mode": mode, "capacity": rounded(capacity), "burnout_risk": rounded(burnout),
                 "goal_pressure": rounded(pressure), "task": task, "progress_update": update,
             }
