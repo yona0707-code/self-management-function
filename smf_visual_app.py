@@ -208,6 +208,8 @@ def estimate_normal_minutes_from_old_goal(goal):
 def load_goals():
     goals = load_json(GOALS_FILE, [])
 
+    history = read_history()
+
     for goal in goals:
         if "estimated_progress" not in goal:
             goal["estimated_progress"] = goal.get("current_progress", 0)
@@ -217,6 +219,9 @@ def load_goals():
 
         if "normal_goal_minutes" not in goal:
             goal["normal_goal_minutes"] = estimate_normal_minutes_from_old_goal(goal)
+
+        if not goal.get("start_date"):
+            goal["start_date"] = infer_goal_start_date(goal, history).isoformat()
 
     return goals
 
@@ -261,6 +266,61 @@ def read_history():
 
     with open(HISTORY_FILE, "r") as file:
         return list(csv.DictReader(file))
+
+
+def infer_goal_start_date(goal, history=None):
+    """Return an old goal's earliest history date, or today if none exists."""
+    if history is None:
+        history = read_history()
+
+    matching_dates = []
+    goal_id = str(goal.get("id", ""))
+
+    for row in history:
+        same_goal = (
+            (goal_id and str(row.get("goal_id", "")) == goal_id)
+            or row.get("goal_name") == goal.get("goal_name")
+        )
+        if not same_goal or not row.get("date"):
+            continue
+
+        try:
+            matching_dates.append(datetime.fromisoformat(row["date"]).date())
+        except (TypeError, ValueError):
+            continue
+
+    return min(matching_dates) if matching_dates else date.today()
+
+
+def calculate_progress_pace(goal, today=None):
+    """Calculate ideal steady progress and the estimate's gap from that pace."""
+    today = today or date.today()
+    start = date.fromisoformat(goal["start_date"])
+    deadline = date.fromisoformat(goal["deadline"])
+    total_goal_days = (deadline - start).days
+    elapsed_days = (today - start).days
+
+    if total_goal_days <= 0:
+        ideal_progress_today = 100.0 if today >= deadline else 0.0
+    else:
+        ideal_progress_today = elapsed_days / total_goal_days * 100
+
+    ideal_progress_today = clamp(ideal_progress_today, 0.0, 100.0)
+    estimated_progress = float(goal.get("estimated_progress", 0))
+    progress_gap = estimated_progress - ideal_progress_today
+    return ideal_progress_today, progress_gap
+
+
+def format_progress_pace(progress_value, progress_gap):
+    """Format the estimated progress headline with its pace indicator."""
+    if abs(progress_gap) < 1:
+        pace_text = "on pace"
+    elif progress_gap > 0:
+        pace_text = f"{abs(progress_gap):.1f}% ahead of ideal pace"
+    else:
+        pace_text = f"{abs(progress_gap):.1f}% behind ideal pace"
+
+    return f"Estimated progress: **{progress_value:.1f}%** — {pace_text}"
 
 
 def days_until(deadline_text):
@@ -1280,6 +1340,7 @@ def render_add_goal():
                     "goal_name": goal_name,
                     "importance": importance,
                     "deadline": deadline.isoformat(),
+                    "start_date": date.today().isoformat(),
                     "estimated_progress": 0,
                     "current_progress": 0,
                     "main_action": main_action,
@@ -1633,6 +1694,7 @@ def render_check_progress():
 
     for goal in goals:
         progress_value = goal.get("estimated_progress", 0)
+        ideal_progress_today, progress_gap = calculate_progress_pace(goal)
         recent_evidence = get_recent_progress_evidence(goal["goal_name"])
         consistency_data = get_consistency_data(goal["goal_name"])
         effort_data = get_effort_data(goal["goal_name"])
@@ -1643,7 +1705,12 @@ def render_check_progress():
 
             st.markdown(
                 f"""
-                Estimated progress: **{round(progress_value, 1)}%**
+                {format_progress_pace(progress_value, progress_gap)}
+
+                Ideal progress today: **{ideal_progress_today:.1f}%**<br>
+                Progress gap: **{progress_gap:+.1f}%**
+
+                *Ideal pace assumes steady progress from the goal start date to the deadline.*
 
                 How the app estimates progress:
                 - Completed task → +1.0%

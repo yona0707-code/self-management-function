@@ -120,6 +120,7 @@ def create_data(today: date) -> tuple[list[dict], dict, list[dict]]:
             "goal_name": name,
             "importance": importance,
             "deadline": deadlines[goal_id - 1].isoformat(),
+            "start_date": start.isoformat(),
             "current_progress": 0.0,
             "estimated_progress": 0.0,
             "main_action": action,

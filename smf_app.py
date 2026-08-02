@@ -180,6 +180,7 @@ def add_goal_tab(goals):
         "goal_name": goal_name,
         "importance": importance,
         "deadline": deadline,
+        "start_date": date.today().isoformat(),
         "current_progress": current_progress,
         "main_action": main_action,
         "normal_amount": normal_amount,
